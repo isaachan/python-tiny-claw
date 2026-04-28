@@ -1,7 +1,7 @@
-from provider.llmprovider import LLMProvider
-from tools.registry import Registry
-from schema.message import Message, Role
-from context.context import Context
+from internal.provider.llmprovider import LLMProvider
+from internal.tools.registry import Registry
+from internal.schema.message import Message, Role
+from internal.context.context import Context
 
 class AgentEngine:
 

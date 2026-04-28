@@ -1,5 +1,5 @@
-from context.context import Context
-from schema.message import ToolCall, ToolResult, ToolDefinition
+from internal.context.context import Context
+from internal.schema.message import ToolCall, ToolResult, ToolDefinition
 
 class Registry:
 

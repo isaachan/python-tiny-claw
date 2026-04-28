@@ -2,9 +2,9 @@ import os
 import json
 from openai import OpenAI
 
-from context.context import Context
-from schema.message import Message, ToolDefinition, ToolCall, Role
-from provider.llmprovider import LLMProvider
+from internal.context.context import Context
+from internal.schema.message import Message, ToolDefinition, ToolCall, Role
+from internal.provider.llmprovider import LLMProvider
 
 
 class OpenAIProvider(LLMProvider):
@@ -29,8 +29,6 @@ class OpenAIProvider(LLMProvider):
             return {"role": "system", "content": msg.content or ""}
         if msg.role == Role.USER and msg.toolcall_id:
             return {"role": "tool", "tool_call_id": msg.toolcall_id, "content": msg.content or ""}
-        if msg.role == Role.USER:
-            return {"role": "user", "content": msg.content or ""}
         if msg.role == Role.ASSISTANT:
             d = {"role": "assistant", "content": msg.content or None}
             if msg.reasoning_content:
@@ -45,7 +43,7 @@ class OpenAIProvider(LLMProvider):
                     for tc in msg.toolcalls
                 ]
             return d
-        return {"role": "user", "content": str(msg.content)}
+        return {"role": "user", "content": msg.content or ""}
 
     def _convert_tool(self, tool: ToolDefinition) -> dict:
         schema = tool.input_schema
