@@ -33,20 +33,22 @@ class AgentEngine:
             if self.enableThinking:
                 print("[Engine][Phase 1] 剥夺工具访问权，强制进入慢思考与规划阶段...")
                 # TODO check exception
-                think_resp = self.provider.generate(ctx, context_history, None)
+                think_resp = self.provider.generate(ctx, context_history, None, stream=self.stream)
                 trace = think_resp.reasoning_content or think_resp.content
                 if trace:
-                    print(f"🧠 [内部思考 Trace]: {trace}")
+                    if not self.stream:
+                        print(f"🧠 [内部思考 Trace]: {trace}")
                     context_history.append(think_resp)
 
 
             #print("[Engine] 正在思考 (Reasoning)...")
             print("[Engine][Phase 2] 恢复工具挂载，等待模型采取行动... ")
             # TODO check exception
-            action_resp = self.provider.generate(ctx, context_history, available_tools)
+            action_resp = self.provider.generate(ctx, context_history, available_tools, stream=self.stream)
             context_history.append(action_resp)
             if action_resp.content:
-                print(f"🤖 [对外回复]: {action_resp.content}")
+                if not self.stream:
+                    print(f"🤖 [对外回复]: {action_resp.content}")
 
             if len(action_resp.toolcalls) == 0:
                 print("[Engine] 模型未请求调用工具，任务宣告完成。")

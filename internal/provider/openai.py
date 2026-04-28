@@ -58,7 +58,7 @@ class OpenAIProvider(LLMProvider):
             }
         }
 
-    def generate(self, ctx: Context, context_history: list[Message], available_tools: list[ToolDefinition] | None) -> Message:
+    def generate(self, ctx: Context, context_history: list[Message], available_tools: list[ToolDefinition] | None, stream: bool = False) -> Message:
         openai_messages = [self._convert_message(m) for m in context_history]
 
         kwargs = {
@@ -71,6 +71,12 @@ class OpenAIProvider(LLMProvider):
         if available_tools is not None:
             kwargs["tools"] = [self._convert_tool(t) for t in available_tools]
 
+        if not stream:
+            return self._generate_nonstream(kwargs)
+
+        return self._generate_stream(kwargs)
+
+    def _generate_nonstream(self, kwargs: dict) -> Message:
         response = self.client.chat.completions.create(**kwargs)
         choice = response.choices[0]
         msg = choice.message
@@ -86,5 +92,54 @@ class OpenAIProvider(LLMProvider):
                     name=tc.function.name,
                     arguments=tc.function.arguments,
                 ))
+
+        return Message(Role.ASSISTANT, content, tool_calls, reasoning_content=reasoning_content)
+
+    def _generate_stream(self, kwargs: dict) -> Message:
+        stream_resp = self.client.chat.completions.create(
+            **kwargs, stream=True, stream_options={"include_usage": True},
+        )
+
+        content = ""
+        reasoning_content = ""
+        tool_calls_acc = {}
+
+        for chunk in stream_resp:
+            if len(chunk.choices) == 0:
+                continue
+
+            delta = chunk.choices[0].delta
+            finish_reason = chunk.choices[0].finish_reason
+
+            if hasattr(delta, 'reasoning_content') and delta.reasoning_content: # type: ignore
+                reasoning_content += delta.reasoning_content # type: ignore
+
+            if delta.content:
+                content += delta.content
+                print(delta.content, end="", flush=True)
+
+            if delta.tool_calls:
+                for tc in delta.tool_calls:
+                    idx = tc.index
+                    if idx not in tool_calls_acc:
+                        tool_calls_acc[idx] = {"id": None, "function": {"name": None, "arguments": ""}}
+                    if tc.id:
+                        tool_calls_acc[idx]["id"] = tc.id
+                    if tc.function:
+                        if tc.function.name:
+                            tool_calls_acc[idx]["function"]["name"] = tc.function.name
+                        if tc.function.arguments:
+                            tool_calls_acc[idx]["function"]["arguments"] += tc.function.arguments
+
+        if content:
+            print()
+
+        tool_calls = []
+        for idx, tc_data in tool_calls_acc.items():
+            tool_calls.append(ToolCall(
+                id=tc_data["id"],
+                name=tc_data["function"]["name"],
+                arguments=tc_data["function"]["arguments"],
+            ))
 
         return Message(Role.ASSISTANT, content, tool_calls, reasoning_content=reasoning_content)

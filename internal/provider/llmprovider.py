@@ -3,6 +3,6 @@ from internal.schema.message import Message, ToolDefinition
 
 class LLMProvider:
 
-    def generate(self, ctx: Context, context_history: list[Message], available_tools: list[ToolDefinition] | None) -> Message: 
+    def generate(self, ctx: Context, context_history: list[Message], available_tools: list[ToolDefinition] | None, stream: bool = False) -> Message:
 
         return None # type: ignore
