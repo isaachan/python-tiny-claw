@@ -1,6 +1,7 @@
 
 class ToolCall():
 
+    #TODO : 这里的 arguments 先简单用字符串表示，后续可以设计成更复杂的结构，甚至支持多模态输入
     def __init__(self, id, name, arguments):
         self.id = id
         self.name = name
@@ -17,7 +18,7 @@ class ToolResult():
 
 class ToolDefinition:
 
-    def __init__(self, name: str, description: str, input_schema: str):
+    def __init__(self, name: str, description: str, input_schema: dict):
         self.name = name
         self.description = description
         self.input_schema = input_schema

@@ -29,7 +29,7 @@ class AgentEngine:
             print(f"========== [Turn {turn_count}] 开始 ==========")
 
             available_tools = self.registry.get_available_tools()
-
+            
             if self.enableThinking:
                 print("[Engine][Phase 1] 剥夺工具访问权，强制进入慢思考与规划阶段...")
                 # TODO check exception
