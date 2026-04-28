@@ -66,4 +66,3 @@ class AgentEngine:
                 observation_msg = Message(Role.USER, result.output, toolcall_id=toolcall.id)
                 context_history.append(observation_msg)
             
-            return None

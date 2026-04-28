@@ -1,8 +1,9 @@
 from internal.context.context import Context
-from internal.schema.message import Message, Role, ToolCall, ToolResult
+from internal.schema.message import Message, Role, ToolCall, ToolResult, ToolDefinition
 from internal.engine.loop import AgentEngine
 from internal.provider.llmprovider import LLMProvider
 from internal.tools.registry import Registry
+from internal.provider.openai import OpenAIProvider
 
 class One_Stage_Mock_Provider(LLMProvider):
 
@@ -39,8 +40,9 @@ class Two_Stage_Mock_Provider(LLMProvider):
 
 class Mock_Registry(Registry):
 
-    def get_available_tools(self):
-        pass
+    def get_available_tools(self) -> list[ToolDefinition]:
+        # return []schema.ToolDefinition{{Name: "bash"}}
+        return [ToolDefinition("bash", "Execute bash commands in the current workspace", None)] # type: ignore
 
     def execute(self, ctx: Context, toolcall: ToolCall):
         return ToolResult(toolcall.id, "-rw-r--r-- 1 user group 234 Oct 24 10:00 main.go\n", False)
@@ -52,8 +54,9 @@ def launch():
 
     # eng := engine.NewAgentEngine(p, r, workDir)
     # engine = AgentEngine(One_Stage_Mock_Provider(), Mock_Registry(), "./", False)
-    engine = AgentEngine(Two_Stage_Mock_Provider(), Mock_Registry(), "./", True)
-    engine.run(Context(), "帮我检查当前目录的文件")
+    # engine = AgentEngine(Two_Stage_Mock_Provider(), Mock_Registry(), "./", True)
+    engine = AgentEngine(OpenAIProvider(), Mock_Registry(), "./", True)
+    engine.run(Context(), "我的mac系统下当前目录下有什么文件？")
 
 
 

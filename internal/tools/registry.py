@@ -1,11 +1,10 @@
 from context.context import Context
-from schema.message import ToolCall, ToolResult
+from schema.message import ToolCall, ToolResult, ToolDefinition
 
 class Registry:
 
-    def get_available_tools(self):
-        pass
+    def get_available_tools(self) -> list[ToolDefinition]:
+        return []
 
     def execute(self, ctx: Context, toolcall: ToolCall) -> ToolResult:
-        
         return None # type: ignore
