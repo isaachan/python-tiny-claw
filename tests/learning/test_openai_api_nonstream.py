@@ -50,6 +50,7 @@ def run_turn(turn, messages):
             messages=messages,
             tools=tools, # type: ignore
             reasoning_effort="high",
+            stream=False,
             extra_body={ "thinking": { "type": "enabled" } },
         )
         messages.append(response.choices[0].message)
