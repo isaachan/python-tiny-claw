@@ -5,10 +5,11 @@ from internal.context.context import Context
 
 class AgentEngine:
 
-    def __init__(self, llmprovider: LLMProvider, registry: Registry, workdir: str, enableThinking: bool):
+    def __init__(self, llmprovider: LLMProvider, registry: Registry, workdir: str, stream: bool, enableThinking: bool):
         self.provider = llmprovider
         self.registry = registry
         self.workDir = workdir
+        self.stream = stream
         self.enableThinking = enableThinking
     
 

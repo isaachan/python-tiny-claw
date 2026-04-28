@@ -55,10 +55,8 @@ def launch():
     # eng := engine.NewAgentEngine(p, r, workDir)
     # engine = AgentEngine(One_Stage_Mock_Provider(), Mock_Registry(), "./", False)
     # engine = AgentEngine(Two_Stage_Mock_Provider(), Mock_Registry(), "./", True)
-    engine = AgentEngine(OpenAIProvider.create_deepseek_provider(), Mock_Registry(), "./", True)
+    engine = AgentEngine(OpenAIProvider.create_deepseek_provider(), Mock_Registry(), "./", False, True)
     engine.run(Context(), "我的mac系统下当前目录下有什么文件？")
-
-
 
 
 if __name__ == "__main__":
