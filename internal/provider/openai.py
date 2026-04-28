@@ -9,13 +9,20 @@ from provider.llmprovider import LLMProvider
 
 class OpenAIProvider(LLMProvider):
 
-    def __init__(self):
-        print("[OpenAIProvider] 正在初始化 OpenAIProvider，连接 OpenAI API...")
-        self.client = OpenAI(
-            api_key=os.environ.get('DEEPSEEK_API_KEY'),
-            base_url=os.environ.get('DEEPSEEK_BASE_URL'),
+    def __init__(self, api_key: str, base_url: str, model: str, enable_thinking: bool = False):
+        print(f"[OpenAIProvider] 正在初始化，连接 {base_url}，模型 {model}...")
+        self.client = OpenAI(api_key=api_key, base_url=base_url or None)
+        self.model = model
+        self.enable_thinking = enable_thinking
+
+    @classmethod
+    def create_deepseek_provider(cls):
+        return cls(
+            api_key=os.environ['DEEPSEEK_API_KEY'],
+            base_url=os.environ.get('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1'),
+            model=os.environ.get('DEEPSEEK_MODEL', 'deepseek-v4-flash'),
+            enable_thinking=True,
         )
-        self.model = os.environ.get('OPENAI_MODEL', 'deepseek-v4-flash')
 
     def _convert_message(self, msg: Message) -> dict:
         if msg.role == Role.SYS:
@@ -26,6 +33,8 @@ class OpenAIProvider(LLMProvider):
             return {"role": "user", "content": msg.content or ""}
         if msg.role == Role.ASSISTANT:
             d = {"role": "assistant", "content": msg.content or None}
+            if msg.reasoning_content:
+                d["reasoning_content"] = msg.reasoning_content
             if msg.toolcalls:
                 d["tool_calls"] = [
                     {
@@ -57,9 +66,10 @@ class OpenAIProvider(LLMProvider):
         kwargs = {
             "model": self.model,
             "messages": openai_messages,
-            "reasoning_effort": "high",
-            "extra_body": {"thinking": {"type": "enabled"}},
         }
+        if self.enable_thinking:
+            kwargs["reasoning_effort"] = "high"
+            kwargs["extra_body"] = {"thinking": {"type": "enabled"}}
         if available_tools is not None:
             kwargs["tools"] = [self._convert_tool(t) for t in available_tools]
 
@@ -70,10 +80,6 @@ class OpenAIProvider(LLMProvider):
         content = msg.content or ""
         reasoning_content = getattr(msg, 'reasoning_content', None) or ""
 
-        # In thinking phase (no tools passed), prefer reasoning_content as trace
-        if available_tools is None and reasoning_content:
-            content = reasoning_content
-
         tool_calls = []
         if msg.tool_calls:
             for tc in msg.tool_calls:
@@ -83,4 +89,4 @@ class OpenAIProvider(LLMProvider):
                     arguments=tc.function.arguments,
                 ))
 
-        return Message(Role.ASSISTANT, content, tool_calls)
+        return Message(Role.ASSISTANT, content, tool_calls, reasoning_content=reasoning_content)

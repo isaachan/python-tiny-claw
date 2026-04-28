@@ -33,9 +33,10 @@ class Role(Enum):
 
 class Message:
 
-    def __init__(self, role, content, toolcalls: list[ToolCall] = [], toolcall_id=None):
+    def __init__(self, role, content, toolcalls: list[ToolCall] = [], toolcall_id=None, reasoning_content=None):
         self.role = role
         self.content = content
         self.toolcalls = toolcalls
         self.toolcall_id = toolcall_id
+        self.reasoning_content = reasoning_content
 

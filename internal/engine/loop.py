@@ -33,8 +33,9 @@ class AgentEngine:
                 print("[Engine][Phase 1] 剥夺工具访问权，强制进入慢思考与规划阶段...")
                 # TODO check exception
                 think_resp = self.provider.generate(ctx, context_history, None)
-                if think_resp.content:
-                    print(f"🧠 [内部思考 Trace]: {think_resp.content}")
+                trace = think_resp.reasoning_content or think_resp.content
+                if trace:
+                    print(f"🧠 [内部思考 Trace]: {trace}")
                     context_history.append(think_resp)
 
 
