@@ -1,6 +1,7 @@
 import sys
 import os
 
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from internal.context.context import Context
@@ -12,6 +13,7 @@ from internal.provider.openai import OpenAIProvider
 from internal.tools.registry import Registry
 from internal.tools.read_file import ReadfileTool
 from internal.tools.write_file import WritefileTool
+from internal.tools.bash import BashTool
 
 class One_Stage_Mock_Provider(LLMProvider):
 
@@ -63,9 +65,10 @@ def launch():
     registry = Registry()
     registry.register(ReadfileTool("./"))
     registry.register(WritefileTool("./"))
+    registry.register(BashTool("./"))
 
     engine = AgentEngine(OpenAIProvider.create_deepseek_provider(), registry, "./", stream=False, enableThinking=False)
-    engine.run(Context(), "请调用工具读取一下当前工作区目录下 hello.txt 文件的内容，并用一句话向我总结它说了什么。")
+    engine.run(Context(), "写个python脚本，打印hello world，执行一下，确保正确，再把输出重定向到 output.txt。")
 
 
 if __name__ == "__main__":
