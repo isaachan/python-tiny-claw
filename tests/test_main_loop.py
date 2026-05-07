@@ -1,15 +1,17 @@
 import sys
 import os
 
-from internal.tools.read_file import ReadfileTool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from internal.context.context import Context
 from internal.schema.message import Message, Role, ToolCall, ToolResult, ToolDefinition
 from internal.engine.loop import AgentEngine
 from internal.provider.llmprovider import LLMProvider
-from internal.tools.registry import Registry
 from internal.provider.openai import OpenAIProvider
+
+from internal.tools.registry import Registry
+from internal.tools.read_file import ReadfileTool
+from internal.tools.write_file import WritefileTool
 
 class One_Stage_Mock_Provider(LLMProvider):
 
@@ -54,15 +56,13 @@ class Mock_Registry(Registry):
         return ToolResult(toolcall.id, "-rw-r--r-- 1 user group 234 Oct 24 10:00 main.go\n", False)
 
 
-
-
 def launch():
     print("🚀 欢迎来到 python-tiny-claw 引擎启动序列")
     print("架构蓝图搭建完毕，等待各核心模块注入！")
 
-
     registry = Registry()
     registry.register(ReadfileTool("./"))
+    registry.register(WritefileTool("./"))
 
     engine = AgentEngine(OpenAIProvider.create_deepseek_provider(), registry, "./", stream=False, enableThinking=False)
     engine.run(Context(), "请调用工具读取一下当前工作区目录下 hello.txt 文件的内容，并用一句话向我总结它说了什么。")

@@ -17,7 +17,7 @@ class ReadfileTool(BaseTool):
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "要读取的文件路径，如 cmd/claw/main.go",
+                        "description": "要读取的文件路径，如 cmd/claw/main.py",
                     },
                 },
                 "required": ["path"],
