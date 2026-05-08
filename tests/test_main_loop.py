@@ -1,7 +1,6 @@
 import sys
 import os
 
-
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from internal.context.context import Context
@@ -14,6 +13,7 @@ from internal.tools.registry import Registry
 from internal.tools.read_file import ReadfileTool
 from internal.tools.write_file import WritefileTool
 from internal.tools.bash import BashTool
+from internal.tools.edit_file import EditfileTool
 
 class One_Stage_Mock_Provider(LLMProvider):
 
@@ -59,6 +59,9 @@ class Mock_Registry(Registry):
 
 
 def launch():
+    # prompt = "写个python脚本，打印hello world，执行一下，确保正确，再把输出重定向到 output.txt。"
+    prompt = "检查当前目录下 error.py 文件是否正确，如果有问题，修复一下。"
+
     print("🚀 欢迎来到 python-tiny-claw 引擎启动序列")
     print("架构蓝图搭建完毕，等待各核心模块注入！")
 
@@ -66,10 +69,10 @@ def launch():
     registry.register(ReadfileTool("./"))
     registry.register(WritefileTool("./"))
     registry.register(BashTool("./"))
+    registry.register(EditfileTool("./"))
 
     engine = AgentEngine(OpenAIProvider.create_deepseek_provider(), registry, "./", stream=False, enableThinking=False)
-    engine.run(Context(), "写个python脚本，打印hello world，执行一下，确保正确，再把输出重定向到 output.txt。")
-
+    engine.run(Context(), prompt)
 
 if __name__ == "__main__":
     launch()

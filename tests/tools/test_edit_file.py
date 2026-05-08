@@ -257,6 +257,12 @@ def test_fuzzy_multiple_matches(tool, work_dir):
     assert "出现了 2 次" in result
 
 
+def test_fuzzy_nested_functions_ambiguous(tool, work_dir):
+    _write_file(work_dir, "code.py", "def foo():\n  x = 1\n  y = 2\n\n  def bar():\n    x = 1\n    y = 2\n")
+    result = _execute(tool, "code.py", "x = 1\ny = 2", "x = 5\ny = 6")
+    assert "出现了 2 次" in result
+
+
 def test_fuzzy_empty_lines_preserved(tool, work_dir):
     _write_file(work_dir, "code.py", "def foo():\n    x=1\n\n    y=2\n")
     result = _execute(tool, "code.py", "x=1\n\ny=2", "a=10\n\nb=20")

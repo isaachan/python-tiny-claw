@@ -20,7 +20,7 @@ class OpenAIProvider(LLMProvider):
         return cls(
             api_key=os.environ['DEEPSEEK_API_KEY'],
             base_url=os.environ.get('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1'),
-            model=os.environ.get('DEEPSEEK_MODEL', 'deepseek-v4-flash'),
+            model=os.environ.get('DEEPSEEK_MODEL', 'deepseek-chat'),
             enable_thinking=True,
         )
 
