@@ -9,7 +9,7 @@ import tempfile
 import pytest
 
 from internal.context.context import Context
-from internal.tools.edit_file import EditfileTool
+from internal.tools.edit_file import EditfileTool, _normalize_newlines, _min_indent, _strip_indents, _add_indent, _fuzzy_replace
 
 
 @pytest.fixture
@@ -27,13 +27,13 @@ def work_dir(tool):
 def _write_file(work_dir, path, content):
     full_path = os.path.join(work_dir, path)
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
-    with open(full_path, "w") as f:
+    with open(full_path, "w", newline="") as f:
         f.write(content)
 
 
 def _read_file(work_dir, path):
     full_path = os.path.join(work_dir, path)
-    with open(full_path, "r") as f:
+    with open(full_path, "r", newline="") as f:
         return f.read()
 
 
@@ -160,6 +160,156 @@ def test_multi_line_old_text_repeated(tool, work_dir):
     _write_file(work_dir, "items.py", "class ItemA:\n    pass\n\nclass ItemB:\n    pass\n")
     result = _execute(tool, "items.py", "class", "def")
     assert "出现了 2 次" in result
+
+
+# -- newline normalization (\r\n vs \n) --
+def test_file_crlf_old_text_lf(tool, work_dir):
+    _write_file(work_dir, "code.py", "def foo():\r\n    pass\r\n")
+    result = _execute(tool, "code.py", "def foo():\n    pass", "def bar():\n    return 1")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "code.py") == "def bar():\r\n    return 1\r\n"
+
+
+def test_file_lf_old_text_crlf(tool, work_dir):
+    _write_file(work_dir, "code.py", "def foo():\n    pass\n")
+    result = _execute(tool, "code.py", "def foo():\r\n    pass", "def bar():\r\n    return 1")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "code.py") == "def bar():\n    return 1\n"
+
+
+def test_file_crlf_new_text_lf_preserves_crlf(tool, work_dir):
+    _write_file(work_dir, "cfg.ini", "[app]\r\nname=foo\r\n")
+    result = _execute(tool, "cfg.ini", "[app]\r\nname=foo", "[app]\nname=bar")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "cfg.ini") == "[app]\r\nname=bar\r\n"
+
+
+def test_file_lf_new_text_crlf_preserves_lf(tool, work_dir):
+    _write_file(work_dir, "cfg.ini", "[app]\nname=foo\n")
+    result = _execute(tool, "cfg.ini", "[app]\nname=foo", "[app]\r\nname=bar")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "cfg.ini") == "[app]\nname=bar\n"
+
+
+# -- _normalize_newlines unit tests --
+def test_normalize_crlf_to_lf():
+    assert _normalize_newlines("hello\r\nworld", "\n") == "hello\nworld"
+
+
+def test_normalize_lf_to_crlf():
+    assert _normalize_newlines("hello\nworld", "\r\n") == "hello\r\nworld"
+
+
+def test_normalize_crlf_to_crlf():
+    assert _normalize_newlines("hello\r\nworld", "\r\n") == "hello\r\nworld"
+
+
+def test_normalize_lf_to_lf():
+    assert _normalize_newlines("hello\nworld", "\n") == "hello\nworld"
+
+
+def test_normalize_mixed_newlines():
+    assert _normalize_newlines("line1\r\nline2\nline3", "\n") == "line1\nline2\nline3"
+
+
+def test_normalize_no_newlines():
+    assert _normalize_newlines("hello world", "\r\n") == "hello world"
+
+
+# -- fuzzy indentation-insensitive matching --
+def test_fuzzy_unindented_old_text(tool, work_dir):
+    _write_file(work_dir, "code.py", "def foo():\n    x=1\n    y=2\n    return x+y\n")
+    result = _execute(tool, "code.py", "x=1\ny=2", "x=3\ny=5")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "code.py") == "def foo():\n    x=3\n    y=5\n    return x+y\n"
+
+
+def test_fuzzy_over_indented_old_text(tool, work_dir):
+    _write_file(work_dir, "code.py", "def foo():\n    x=1\n    y=2\n    return x+y\n")
+    result = _execute(tool, "code.py", "        x=1\n        y=2", "x=3\ny=5")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "code.py") == "def foo():\n    x=3\n    y=5\n    return x+y\n"
+
+
+def test_fuzzy_new_text_gets_file_indent(tool, work_dir):
+    _write_file(work_dir, "code.py", "if True:\n  a=1\n  b=2\n")
+    result = _execute(tool, "code.py", "a=1\nb=2", "a=10\nb=20")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "code.py") == "if True:\n  a=10\n  b=20\n"
+
+
+def test_fuzzy_preserves_relative_indentation(tool, work_dir):
+    _write_file(work_dir, "code.py", "def foo():\n    for x in xs:\n        process(x)\n        log(x)\n")
+    result = _execute(tool, "code.py", "for x in xs:\n    process(x)\n    log(x)", "for x in xs:\n    handle(x)\n    trace(x)")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "code.py") == "def foo():\n    for x in xs:\n        handle(x)\n        trace(x)\n"
+
+
+def test_fuzzy_not_found(tool, work_dir):
+    _write_file(work_dir, "code.py", "def foo():\n    x=1\n    y=2\n")
+    result = _execute(tool, "code.py", "z=99\nw=100", "a=1\nb=2")
+    assert "未找到" in result
+
+
+def test_fuzzy_multiple_matches(tool, work_dir):
+    _write_file(work_dir, "code.py", "if a:\n    x=1\n    y=2\nif b:\n    x=1\n    y=2\n")
+    result = _execute(tool, "code.py", "x=1\ny=2", "x=0\ny=0")
+    assert "出现了 2 次" in result
+
+
+def test_fuzzy_empty_lines_preserved(tool, work_dir):
+    _write_file(work_dir, "code.py", "def foo():\n    x=1\n\n    y=2\n")
+    result = _execute(tool, "code.py", "x=1\n\ny=2", "a=10\n\nb=20")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "code.py") == "def foo():\n    a=10\n\n    b=20\n"
+
+
+# -- _min_indent unit tests --
+def test_min_indent_basic():
+    assert _min_indent(["    x", "  y", "      z"]) == 2
+
+
+def test_min_indent_with_empty_lines():
+    assert _min_indent(["", "  x", "", "    y"]) == 2
+
+
+def test_min_indent_all_empty():
+    assert _min_indent(["", "", ""]) == 0
+
+
+# -- _strip_indents unit tests --
+def test_strip_indents_basic():
+    assert _strip_indents(["    x", "    y", ""], 4) == ["x", "y", ""]
+
+
+def test_strip_indents_preserves_relative():
+    assert _strip_indents(["  parent", "    child"], 2) == ["parent", "  child"]
+
+
+# -- _add_indent unit tests --
+def test_add_indent_basic():
+    assert _add_indent(["x", "  y", ""], 4) == ["    x", "      y", ""]
+
+
+# -- _fuzzy_replace unit tests --
+def test_fuzzy_replace_success():
+    content = "def foo():\n    x=1\n    y=2\n"
+    result, err = _fuzzy_replace(content, "x=1\ny=2", "x=3\ny=5", "\n")
+    assert result == "def foo():\n    x=3\n    y=5\n"
+    assert err is None
+
+
+def test_fuzzy_replace_not_found():
+    result, err = _fuzzy_replace("a\nb\n", "x\ny", "z\nw", "\n")
+    assert result is None
+    assert err == 0
+
+
+def test_fuzzy_replace_multiple():
+    content = "if a:\n    x=1\n    y=2\nif b:\n    x=1\n    y=2\n"
+    result, err = _fuzzy_replace(content, "x=1\ny=2", "z=1\nw=2", "\n")
+    assert result is None
+    assert err == 2
 
 
 # -- file not found --
