@@ -1,6 +1,6 @@
-# CLAUDE.md
+# Overview
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+`python-tiny-claw` is a minimal Python implementation of a **two-stage ReAct agent loop** — a coding agent similar to Claude Code, built from scratch.
 
 ## Commands
 
@@ -22,10 +22,6 @@ python tests/test_main_loop.py
 # Clean __pycache__ directories (excludes venv/)
 bash clean.sh
 ```
-
-## Project Overview
-
-`python-tiny-claw` is a minimal Python implementation of a **two-stage ReAct agent loop** — a coding agent similar to Claude Code, built from scratch.
 
 ## Architecture
 
@@ -90,3 +86,9 @@ Three concrete tools, all sandboxed to `work_dir`:
 - No `__init__.py` files — relies on implicit namespace packages
 - No packaging config (`pyproject.toml` / `setup.py`)
 - `BashTool` uses `shell=True` without input sanitization — only safe because the model is the caller, not end users
+
+## Test
+
+### Unit test suites
+
+Using pytest as unit test framework. All tests are found in tests/ folder.

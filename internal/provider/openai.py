@@ -58,7 +58,7 @@ class OpenAIProvider(LLMProvider):
             }
         }
 
-    def generate(self, ctx: Context, context_history: list[Message], available_tools: list[ToolDefinition] | None, stream: bool = False) -> Message:
+    def generate(self, ctx: Context | None, context_history: list[Message], available_tools: list[ToolDefinition] | None, stream: bool = False) -> Message:
         openai_messages = [self._convert_message(m) for m in context_history]
 
         kwargs = {
