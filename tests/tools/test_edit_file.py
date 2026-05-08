@@ -125,6 +125,43 @@ def test_whitespace_only_old_text(tool, work_dir):
     assert _read_file(work_dir, "spaces.txt") == "a :: b"
 
 
+# -- old/new text with newlines --
+def test_old_text_contains_newline(tool, work_dir):
+    _write_file(work_dir, "code.py", "def foo():\n    pass\n    return 1\n")
+    result = _execute(tool, "code.py", "    pass\n    return 1", "    return 42")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "code.py") == "def foo():\n    return 42\n"
+
+
+def test_new_text_contains_newline(tool, work_dir):
+    _write_file(work_dir, "config.ini", "[db]\nhost = localhost\n")
+    result = _execute(tool, "config.ini", "[db]", "[database]\nengine = pg")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "config.ini") == "[database]\nengine = pg\nhost = localhost\n"
+
+
+def test_both_old_and_new_contain_newlines(tool, work_dir):
+    _write_file(work_dir, "poem.txt", "roses are red\nviolets are blue\nsugar is sweet\n")
+    result = _execute(tool, "poem.txt", "roses are red\nviolets are blue", "tulips are yellow\ndaisies are white")
+    assert "替换成功" in result
+    assert _read_file(work_dir, "poem.txt") == "tulips are yellow\ndaisies are white\nsugar is sweet\n"
+
+
+def test_multi_line_unique_match(tool, work_dir):
+    _write_file(work_dir, "api.py", "# TODO: refactor\n# TODO: optimize\n# FIXME: critical bug\n")
+    result = _execute(tool, "api.py", "# TODO: optimize", "# DONE: optimized")
+    assert "替换成功" in result
+    content = _read_file(work_dir, "api.py")
+    assert "# DONE: optimized" in content
+    assert "# TODO: refactor" in content
+
+
+def test_multi_line_old_text_repeated(tool, work_dir):
+    _write_file(work_dir, "items.py", "class ItemA:\n    pass\n\nclass ItemB:\n    pass\n")
+    result = _execute(tool, "items.py", "class", "def")
+    assert "出现了 2 次" in result
+
+
 # -- file not found --
 def test_file_not_found(tool, work_dir):
     result = _execute(tool, "nonexistent.txt", "foo", "bar")

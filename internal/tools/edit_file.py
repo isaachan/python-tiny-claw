@@ -39,6 +39,7 @@ class EditfileTool(BaseTool):
     # 支持的替换场景：
     # 1. 精确字符串替换 — old_text / new_text 为不带换行的词或句子，前后无空格。
     # 2. 带空白替换 — old_text / new_text 前后可以包含空格（缩进、尾随空格等）。
+    # 3. 跨行替换 — old_text / new_text 包含换行符，假设文件与参数的换行符一致。
     def execute(self, ctx: Context, args: str) -> str:
         input = json.loads(args)
         full_path = os.path.join(self.work_dir, input["path"])

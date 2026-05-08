@@ -10,7 +10,7 @@ import json
 from internal.schema.message import Message, Role, ToolCall, ToolDefinition
 from internal.provider.openai import OpenAIProvider
 
-
+# TODO convert to pytest
 class TestConvertMessage(unittest.TestCase):
 
     def setUp(self):
@@ -91,7 +91,7 @@ class TestConvertTool(unittest.TestCase):
         )
 
     def test_tool_with_string_schema(self):
-        tool = ToolDefinition("bash", "Execute bash commands", '{"type": "object", "properties": {"cmd": {"type": "string"}}}')
+        tool = ToolDefinition("bash", "Execute bash commands", '{"type": "object", "properties": {"cmd": {"type": "string"}}}') # type: ignore
         result = self.provider._convert_tool(tool)
         self.assertEqual(result, {
             "type": "function",
@@ -148,7 +148,7 @@ class TestGenerate(unittest.TestCase):
             content="I'll use bash"
         )
 
-        tools = [ToolDefinition("bash", "Execute bash", '{"type": "object", "properties": {}}')]
+        tools = [ToolDefinition("bash", "Execute bash", '{"type": "object", "properties": {}}')] # type: ignore
         result = self.provider.generate(None, [
             Message(Role.SYS, "You are an assistant."),
             Message(Role.USER, "List files."),
@@ -169,7 +169,7 @@ class TestGenerate(unittest.TestCase):
             tool_calls=[mock_tool_call]
         )
 
-        tools = [ToolDefinition("bash", "Execute bash", '{"type": "object", "properties": {}}')]
+        tools = [ToolDefinition("bash", "Execute bash", '{"type": "object", "properties": {}}')] # type: ignore
         result = self.provider.generate(None, [
             Message(Role.USER, "List files."),
         ], tools)
